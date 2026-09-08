@@ -1,19 +1,52 @@
-fn main() {
-    let name = "aaabbccccc"; // NOTE : we want this := a3b2c5
+use std::time::Duration;
 
-    let name_bytes: Vec<char> = name.chars().collect();
+use tokio::time::sleep;
 
-    let mut new_name = String::new();
-    let mut count = 1;
+trait Greet {
+    fn greet(&self) -> String;
+}
 
-    for i in 0..name_bytes.len() {
-        if i + 1 < name_bytes.len() && name_bytes[i] == name_bytes[i + 1] {
-            count += 1;
-        } else {
-            new_name.push(name_bytes[i]);
-            new_name.push_str(&count.to_string());
-            count = 1;
-        }
+trait Number {
+    fn multiply(&self) -> i32;
+}
+
+impl Number for i32 {
+    fn multiply(&self) -> i32 {
+        let number = self * self;
+        return number;
     }
-    println!("The new name : {}", new_name);
+}
+
+impl Greet for String {
+    fn greet(&self) -> String {
+        format!("Hello , {}", self)
+    }
+}
+
+async fn fetch_url(id: u32, delay_sec: u64) -> String {
+    println!("Starting fetch for jobs {id}");
+    sleep(Duration::from_secs(delay_sec)).await;
+    format!("Result from jobs {id}")
+}
+
+#[tokio::main]
+async fn main() {
+    let start = std::time::Instant::now();
+
+    let handle1 = tokio::spawn(fetch_url(1, 2));
+    let handle2 = tokio::spawn(fetch_url(2, 3));
+    let handle3 = tokio::spawn(fetch_url(3, 5));
+
+    let (r1, r2, r3) = tokio::join!(handle1, handle2, handle3);
+    println!("{} ", r1.unwrap());
+    println!("{} ", r2.unwrap());
+    println!("{} ", r3.unwrap());
+
+    println!("Total elasped time {:.2?}", start.elapsed());
+
+    let name = String::from("Sarthak");
+    println!("{} \n", name.greet());
+
+    let number = 12;
+    println!("The number {} multiple is {}", number, number.multiply());
 }
