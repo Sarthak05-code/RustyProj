@@ -1,107 +1,59 @@
-use std::io;
+fn parse_heading(markdown: &str) -> String {
+    let mut level = 0;
 
-fn main() {
-    let mut town_hall = 2;
-    let mut cannon_level = 1;
-
-    loop {
-        println!(
-            "\nTown Hall Level : {}\nCannon Level : {}",
-            town_hall, cannon_level
-        );
-
-        println!("Enter command (town hall, cannon, town hall --11, cannon --5, quit):");
-
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
-
-        let parts: Vec<&str> = input.trim().split_whitespace().collect();
-
-        match parts.as_slice() {
-            // Quit
-            ["q"] | ["quit"] => break,
-
-            // Upgrade Town Hall by 1
-            ["town", "hall"] => {
-                if town_hall >= 11 {
-                    println!("Max Town Hall level reached.");
-                } else {
-                    town_hall += 1;
-                    println!("Town Hall upgraded to {}.", town_hall);
-                }
-            }
-
-            // Set Town Hall directly
-            ["town", "hall", level] => {
-                if let Some(num) = level.strip_prefix("--") {
-                    if let Ok(level) = num.parse::<i32>() {
-                        if (1..=11).contains(&level) {
-                            town_hall = level;
-
-                            // Cannon cannot be higher than Town Hall
-                            if cannon_level > town_hall {
-                                cannon_level = town_hall;
-                            }
-
-                            println!("Town Hall set to {}.", town_hall);
-                        } else {
-                            println!("Town Hall level must be between 1 and 11.");
-                        }
-                    } else {
-                        println!("Invalid Town Hall level.");
-                    }
-                } else {
-                    println!("Use format: town hall --11");
-                }
-            }
-
-            // Upgrade Cannon by 1
-            ["cannon"] => {
-                if cannon_level >= town_hall {
-                    println!("Cannon can't exceed Town Hall level.");
-                } else {
-                    cannon_level += 1;
-                    println!("Cannon upgraded to {}.", cannon_level);
-                }
-            }
-
-            // Set Cannon directly
-            ["cannon", level] => {
-                if let Some(num) = level.strip_prefix("--") {
-                    if let Ok(level) = num.parse::<i32>() {
-                        if (1..=town_hall).contains(&level) {
-                            cannon_level = level;
-
-                            println!("Cannon set to {}.", cannon_level);
-                        } else {
-                            println!(
-                                "Cannon level must be between 1 and Town Hall ({}).",
-                                town_hall
-                            );
-                        }
-                    } else {
-                        println!("Invalid Cannon level.");
-                    }
-                } else {
-                    println!("Use format: cannon --5");
-                }
-            }
-
-            // Unknown command
-            _ => {
-                println!("Unknown command.");
-            }
-        }
-
-        // Check AFTER executing the command
-        if town_hall == 11 && cannon_level == 11 {
-            println!("\nYou have reached Max level. Auto exiting.");
-            break;
-        }
+    if markdown.starts_with("### ") {
+        level = 3;
+    } else if markdown.starts_with("## ") {
+        level = 2;
+    } else if markdown.starts_with("# ") {
+        level = 1;
     }
 
-    println!(
-        "\nFinal Levels\nTown Hall : {}\nCannon Level : {}",
-        town_hall, cannon_level
-    );
+    if level == 0 {
+        return markdown.to_string();
+    }
+
+    let text = &markdown[(level + 1) as usize..];
+
+    format!("<h{}>{}</h{}>", level, text, level)
+}
+
+fn parse_bold(markdown: &str) -> String {
+    if markdown.len() >= 5 && markdown.starts_with("**") && markdown.ends_with("**") {
+        let text = &markdown[2..markdown.len() - 2];
+        return format!("<strong>{}</strong>", text);
+    }
+
+    markdown.to_string()
+}
+
+fn parse_italic(markdown: &str) -> String {
+    if markdown.len() >= 3
+        && markdown.starts_with("*")
+        && markdown.ends_with("*")
+        && !markdown.starts_with("**")
+    {
+        let text = &markdown[1..markdown.len() - 1];
+        return format!("<em>{}</em>", text);
+    }
+
+    markdown.to_string()
+}
+
+fn parse_bold_italic(markdown: &str) -> String {
+    if markdown.len() >= 7 && markdown.starts_with("***") && markdown.ends_with("***") {
+        let text = &markdown[3..markdown.len() - 3];
+        return format!("<strong><em>{}</em></strong>", text);
+    }
+
+    markdown.to_string()
+}
+
+fn main() {
+    println!("{}", parse_heading("# Hello"));
+    println!("{}", parse_heading("## Rust"));
+    println!("{}", parse_heading("### Parser"));
+    println!("{}", parse_bold("**bold**"));
+    print!("{}", parse_italic("*Italic*"));
+    println!("{}", parse_bold_italic("***Bold and italic***"));
 }
