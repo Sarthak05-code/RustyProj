@@ -137,6 +137,31 @@ fn parse_markdown(markdown: &str) -> String {
     html
 }
 
+fn parse_list_item(text: &str) -> String {
+    format!("<li>{}</li>", text)
+}
+
+fn parse_list(markdown: &str) -> String {
+    let mut html = String::new();
+
+    html.push_str("<ul>\n");
+
+    for line in markdown.lines() {
+        if line.starts_with("- ") {
+            let text = &line[2..];
+
+            let parsed_item = parse_list_item(text);
+
+            html.push_str(&parsed_item);
+            html.push('\n');
+        }
+    }
+
+    html.push_str("</ul>");
+
+    html
+}
+
 fn main() {
     let input = r#"# Rust Markdown Test
 
@@ -154,4 +179,10 @@ This line has **bold [a link](https://example.com) inside it**.
 "#;
 
     println!("{}", parse_markdown(input));
+
+    let input = r#"- Apple
+    - Banana
+    - Orange"#;
+
+    println!("{}", parse_list(input));
 }
