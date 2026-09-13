@@ -1,4 +1,4 @@
-fn parse_heading(markdown: &str) -> String {
+fn parse_heading(markdown: &str) -> Option<String> {
     let mut level = 0;
 
     if markdown.starts_with("###### ") {
@@ -16,55 +16,113 @@ fn parse_heading(markdown: &str) -> String {
     }
 
     if level == 0 {
-        return markdown.to_string();
+        return None;
     }
 
-    let text = &markdown[(level + 1) as usize..];
+    let text = markdown[level..].trim_start();
+    let parsed_text = parse_inline(text);
 
-    format!("<h{}>{}</h{}>", level, text, level)
-}
-
-fn parse_bold(markdown: &str) -> String {
-    if markdown.len() >= 5 && markdown.starts_with("**") && markdown.ends_with("**") {
-        let text = &markdown[2..markdown.len() - 2];
-        return format!("<strong>{}</strong>", text);
-    }
-
-    markdown.to_string()
-}
-
-fn parse_italic(markdown: &str) -> String {
-    if markdown.len() >= 3
-        && markdown.starts_with("*")
-        && markdown.ends_with("*")
-        && !markdown.starts_with("**")
-    {
-        let text = &markdown[1..markdown.len() - 1];
-        return format!("<em>{}</em>", text);
-    }
-
-    markdown.to_string()
-}
-
-fn parse_bold_italic(markdown: &str) -> String {
-    if markdown.len() >= 7 && markdown.starts_with("***") && markdown.ends_with("***") {
-        let text = &markdown[3..markdown.len() - 3];
-        return format!("<strong><em>{}</em></strong>", text);
-    }
-
-    markdown.to_string()
+    Some(format!("<h{}>{}</h{}>", level, parsed_text, level))
 }
 
 fn parse_paragraph(markdown: &str) -> String {
-    format!("<p>{}</p>", markdown.trim())
+    let parsed_text = parse_inline(markdown.trim());
+    format!("<p>{}</p>", parsed_text)
 }
 
+fn parse_inline(text: &str) -> String {
+    let mut result = String::new();
+    let chars: Vec<char> = text.chars().collect();
+    let mut i = 0;
+
+    let mut is_bold_italic = false;
+    let mut is_bold = false;
+    let mut is_italic = false;
+
+    while i < chars.len() {
+        // ---------------- LINK ----------------
+        if chars[i] == '[' {
+            let mut close_bracket = i;
+
+            while close_bracket < chars.len() && chars[close_bracket] != ']' {
+                close_bracket += 1;
+            }
+
+            if close_bracket < chars.len()
+                && close_bracket + 1 < chars.len()
+                && chars[close_bracket + 1] == '('
+            {
+                let mut close_parenthesis = close_bracket + 2;
+
+                while close_parenthesis < chars.len() && chars[close_parenthesis] != ')' {
+                    close_parenthesis += 1;
+                }
+
+                if close_parenthesis < chars.len() {
+                    let link_text: String = chars[i + 1..close_bracket].iter().collect();
+
+                    let url: String = chars[close_bracket + 2..close_parenthesis].iter().collect();
+
+                    let parsed_link_text = parse_inline(&link_text);
+
+                    result.push_str(&format!("<a href=\"{}\">{}</a>", url, parsed_link_text));
+
+                    i = close_parenthesis + 1;
+                    continue;
+                }
+            }
+        }
+
+        // ---------------- BOLD + ITALIC ----------------
+        if i + 2 < chars.len() && chars[i] == '*' && chars[i + 1] == '*' && chars[i + 2] == '*' {
+            if is_bold_italic {
+                result.push_str("</em></strong>");
+                is_bold_italic = false;
+            } else {
+                result.push_str("<strong><em>");
+                is_bold_italic = true;
+            }
+
+            i += 3;
+
+        // ---------------- BOLD ----------------
+        } else if i + 1 < chars.len() && chars[i] == '*' && chars[i + 1] == '*' {
+            if is_bold {
+                result.push_str("</strong>");
+                is_bold = false;
+            } else {
+                result.push_str("<strong>");
+                is_bold = true;
+            }
+
+            i += 2;
+
+        // ---------------- ITALIC ----------------
+        } else if chars[i] == '*' {
+            if is_italic {
+                result.push_str("</em>");
+                is_italic = false;
+            } else {
+                result.push_str("<em>");
+                is_italic = true;
+            }
+
+            i += 1;
+
+        // ---------------- NORMAL CHARACTER ----------------
+        } else {
+            result.push(chars[i]);
+            i += 1;
+        }
+    }
+
+    result
+}
 fn parse_markdown(markdown: &str) -> String {
     let mut html = String::new();
 
     for line in markdown.lines() {
-        if line.starts_with('#') {
-            let parsed_line = parse_heading(line);
+        if let Some(parsed_line) = parse_heading(line) {
             html.push_str(&parsed_line);
             html.push('\n');
         } else if line.trim().is_empty() {
@@ -80,12 +138,20 @@ fn parse_markdown(markdown: &str) -> String {
 }
 
 fn main() {
-    let html = "# Hello
-    Rust is an awesome language.
+    let input = r#"# Rust Markdown Test
 
-    I am learning rust.";
-    println!("{}", parse_markdown(html));
-    println!("{}", parse_bold("**bold**"));
-    println!("{}", parse_italic("*Italic*"));
-    println!("{}", parse_bold_italic("***Bold and italic***"));
+This is **bold**, this is *italic*, and this is ***both***.
+
+Visit [Rust](https://www.rust-lang.org) to learn **systems programming**.
+
+## Another Heading
+
+You can write [**bold links**](https://example.com) and *italic text* together.
+
+This line has **bold [a link](https://example.com) inside it**.
+
+### Final Test
+"#;
+
+    println!("{}", parse_markdown(input));
 }
