@@ -1,7 +1,13 @@
 fn parse_heading(markdown: &str) -> String {
     let mut level = 0;
 
-    if markdown.starts_with("### ") {
+    if markdown.starts_with("###### ") {
+        level = 6;
+    } else if markdown.starts_with("##### ") {
+        level = 5;
+    } else if markdown.starts_with("#### ") {
+        level = 4;
+    } else if markdown.starts_with("### ") {
         level = 3;
     } else if markdown.starts_with("## ") {
         level = 2;
@@ -49,11 +55,37 @@ fn parse_bold_italic(markdown: &str) -> String {
     markdown.to_string()
 }
 
+fn parse_paragraph(markdown: &str) -> String {
+    format!("<p>{}</p>", markdown.trim())
+}
+
+fn parse_markdown(markdown: &str) -> String {
+    let mut html = String::new();
+
+    for line in markdown.lines() {
+        if line.starts_with('#') {
+            let parsed_line = parse_heading(line);
+            html.push_str(&parsed_line);
+            html.push('\n');
+        } else if line.trim().is_empty() {
+            continue;
+        } else {
+            let parsed_line = parse_paragraph(line);
+            html.push_str(&parsed_line);
+            html.push('\n');
+        }
+    }
+
+    html
+}
+
 fn main() {
-    println!("{}", parse_heading("# Hello"));
-    println!("{}", parse_heading("## Rust"));
-    println!("{}", parse_heading("### Parser"));
+    let html = "# Hello
+    Rust is an awesome language.
+
+    I am learning rust.";
+    println!("{}", parse_markdown(html));
     println!("{}", parse_bold("**bold**"));
-    print!("{}", parse_italic("*Italic*"));
+    println!("{}", parse_italic("*Italic*"));
     println!("{}", parse_bold_italic("***Bold and italic***"));
 }
