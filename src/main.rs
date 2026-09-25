@@ -7,6 +7,7 @@ enum Opcode {
     HALT, // program end
     MOV,  // move data between variables and addresses.
 }
+mod test;
 
 fn parser(token: &str) -> Option<Opcode> {
     match token.to_uppercase().as_str() {
