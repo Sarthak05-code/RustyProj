@@ -1,5 +1,7 @@
 mod extract;
+mod vm;
 unsafe extern "C" {}
+
 
 unsafe fn caller(number: u32) -> u32 {
     number << 10
@@ -34,4 +36,8 @@ fn main() {
     }
 
     extract::name_caller("Sarthak");
+
+
+    vm::main();
+    
 }
