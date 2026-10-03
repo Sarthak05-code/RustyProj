@@ -1,52 +1,37 @@
-enum Opcode {
-    ADD,  // addition
-    SUB,  // subtraction
-    ADA,  // add to a register
-    JMP,  // jump (unconditional)
-    JC,   // jump on carry
-    HALT, // program end
-    MOV,  // move data between variables and addresses.
-}
-mod test;
+mod extract;
+unsafe extern "C" {}
 
-fn parser(token: &str) -> Option<Opcode> {
-    match token.to_uppercase().as_str() {
-        "ADD" => Some(Opcode::ADD),
-        "SUB" => Some(Opcode::SUB),
-        "ADA" => Some(Opcode::ADA),
-        "JMP" => Some(Opcode::JMP),
-        "JC" => Some(Opcode::JC),
-        "MOV" => Some(Opcode::MOV),
-        "HALT" => Some(Opcode::HALT),
-        _ => None,
+unsafe fn caller(number: u32) -> u32 {
+    number << 10
+}
+
+trait Speaker {
+    fn speak(&self) {}
+}
+
+struct Dog;
+impl Speaker for Dog {
+    fn speak(&self) {
+        println!("The dog is speaking");
+    }
+}
+
+struct Cat;
+impl Speaker for Cat {
+    fn speak(&self) {
+        println!("The cat is speaking");
     }
 }
 
 fn main() {
-    let text = r#"
-        mov A, 10;
-        mov B,A
-        HALT;
-        "#;
+    let number = unsafe { caller(10) };
 
-    let texts: Vec<&str> = text
-        .split(|c: char| c.is_whitespace() || c == ',' || c == ';')
-        .filter(|s| !s.is_empty())
-        .collect();
+    println!("The number is {}", number);
 
-    for token in texts {
-        if let Some(opcode) = parser(token) {
-            match opcode {
-                Opcode::MOV => println!("Move instruction. "),
-                Opcode::ADD => println!("Addition instruction. "),
-                Opcode::ADA => println!("Addtion to Register A instruction. "),
-                Opcode::JMP => println!("Unconditional Jump instruction. "),
-                Opcode::JC => println!("Jump on carry instruction. "),
-                Opcode::HALT => println!("Program stop execution. "),
-                Opcode::SUB => println!("Subtract instruction. "),
-            }
-        } else {
-            println!("Operand : {}", token);
-        }
+    let speakers: Vec<Box<dyn Speaker>> = vec![Box::new(Dog), Box::new(Cat)];
+    for speaker in speakers {
+        speaker.speak();
     }
+
+    extract::name_caller("Sarthak");
 }
