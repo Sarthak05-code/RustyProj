@@ -1,43 +1,13 @@
-mod extract;
-mod vm;
-unsafe extern "C" {}
-
-
-unsafe fn caller(number: u32) -> u32 {
-    number << 10
-}
-
-trait Speaker {
-    fn speak(&self) {}
-}
-
-struct Dog;
-impl Speaker for Dog {
-    fn speak(&self) {
-        println!("The dog is speaking");
-    }
-}
-
-struct Cat;
-impl Speaker for Cat {
-    fn speak(&self) {
-        println!("The cat is speaking");
-    }
-}
-
 fn main() {
-    let number = unsafe { caller(10) };
+    let stored_values = ["Sarthak", "Thapa", "is", "my", "name", "."];
 
-    println!("The number is {}", number);
-
-    let speakers: Vec<Box<dyn Speaker>> = vec![Box::new(Dog), Box::new(Cat)];
-    for speaker in speakers {
-        speaker.speak();
+    for text in &stored_values {
+        if text.len() != 1 {
+            println!("Valid text -> {text}")
+        } else {
+            println!("Invalid text -> {text}")
+        }
     }
 
-    extract::name_caller("Sarthak");
-
-
-    vm::main();
-    
+    println!("{:?}", stored_values);
 }
