@@ -1,80 +1,39 @@
-#![allow(dead_code)]
 
-const TAX_RATE: f64 = 0.15;
-const BONUS_PER_YEAR: f64 = 0.10;
-#[derive(Debug)]
-struct UserData {
-    id: u32,
-    user_name: String,
-    email: String,
-    salary: f64,
-    year_worked: u32,
-    status: EmployeeStatus,
-}
 
-#[derive(Debug)]
-enum EmployeeStatus {
-    NormalEmployee,
-    Admin,
-}
-
-trait BonusCalculator {
-    fn bonus(&self) -> f64;
-}
-
-impl UserData {
-    fn new(
-        id: u32,
-        user_name: &str,
-        email: &str,
-        salary: f64,
-        year_worked: u32,
-    ) -> Result<Self, String> {
-        if salary < 0.0 {
-            return Err(String::from("Salary can't be negative"));
-        }
-
-        Ok(Self {
-            id,
-            user_name: user_name.to_string(),
-            email: email.to_string(),
-            salary,
-            year_worked,
-            status: EmployeeStatus::NormalEmployee,
-        })
+fn negative_value(number: i32) -> Result<String, String> {
+    if number < 0 {
+        return Err(String::from("The number can't be zero."));
     }
 
-    fn net_pay(&self) -> Result<f64, String> {
-        let gross = self.salary + self.bonus();
-        Ok(gross - tax(gross))
+    Ok(String::from("The number is Fine"))
+}
+
+/// Treat even as [`Ok`] and treat odd as [`Err`].
+/// Treats negative value will show error as the data type is u32.
+fn is_even(number: u32) -> Result<String, String> {
+    if number % 2 == 0 {
+        return Ok(String::from("The number is even."));
+    } else {
+        Err(String::from("The number is odd."))
     }
 }
 
-impl BonusCalculator for UserData {
-    fn bonus(&self) -> f64 {
-        self.salary * self.year_worked as f64 * BONUS_PER_YEAR
+fn runner(choice: u32, number: i32) -> Result<(), String> {
+    if choice == 1 {
+        let result = negative_value(number)?;
+        println!("Result : {result}");
+    } else if choice == 2 {
+        let unsigned = u32::try_from(number).map_err(|e| e.to_string())?;
+        let even_or_odd = is_even(unsigned)?;
+        println!("Result : {even_or_odd}")
+    } else {
+        println!("Invalid Number : [{choice}]");
     }
-}
-
-fn tax(amount: f64) -> f64 {
-    amount * TAX_RATE
-}
-
-fn print_bonus(b: &impl BonusCalculator) {
-    println!("Bonus : {:.2}", b.bonus());
-}
-
-fn run() -> Result<(), String> {
-    let user = UserData::new(1, "Sarthak", "ytsarthak1@gmail.com", 50_000.0, 12)?;
-    println!("User : {:?}", user);
-    print_bonus(&user);
-    let net = user.net_pay()?;
-    println!("Amount after Tax : {:.2}", net);
     Ok(())
 }
 
 fn main() {
-    if let Err(e) = run() {
-        println!("Error : {e}");
-    }
+    if let Err(err) = runner(10, 10) {
+        println!("Error : {err}");
+    } 
 }
