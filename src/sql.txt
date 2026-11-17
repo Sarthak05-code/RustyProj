@@ -1,0 +1,9 @@
+CREATE TABLE USER(
+    id int primary key auto_increment,
+    user_name varchar(200),
+    age int,
+    is_admin bool
+)
+SELECT * FROM USER
+WHERE ID = 101 AND USERNAME = "Sarthak" AND IS_ADMIN = TRUE;
+

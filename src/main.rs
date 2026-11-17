@@ -1,29 +1,33 @@
-#![allow(non_snake_case)]
+use std::{fs::OpenOptions, io::Read};
 
-use std::{thread::sleep, time::Duration};
+fn main() -> std::io::Result<()> {
+    let mut sql_file = OpenOptions::new().read(true).open("sql.txt")?;
+    let mut readable_content = String::new();
+    sql_file.read_to_string(&mut readable_content)?;
 
-fn New_Battle_Engine() {
-    
-}
+    // Convert everything to lowercase to make the check case-insensitive
+    let content_lower = readable_content.to_lowercase();
 
-#[deprecated(note = "use the new New_Battle_Engine")]
-fn Battle_Engine() {
-    let mut enemies = vec!["Goblin 1", "Goblin 2", "Goblin 3"];
-    let enemy_sum = enemies.len() as f64;
+    // 1. Find the position (index) of the keywords
+    let create_pos = content_lower.find("create table");
+    let select_pos = content_lower.find("select");
 
-    while !enemies.is_empty() {
-        let defeated = enemies.remove(0);
-
-        let remaining = enemies.len() as f64 / enemy_sum * 100.0;
-        println!("Defeated: {defeated} | Enemies remaining: {remaining:.1}%");
-
-        sleep(Duration::from_millis(1000));
+    // 2. Run the validation logic
+    match (create_pos, select_pos) {
+        (None, _) => {
+            println!("Failure: No 'CREATE TABLE' statement found in the script.");
+        }
+        (Some(_), None) => {
+            println!("Success: Table created (no queries executed yet).");
+        }
+        (Some(create_idx), Some(select_idx)) => {
+            if create_idx > select_idx {
+                println!("Failure: You are trying to SELECT before creating the table!");
+            } else {
+                println!("Success: SQL order is valid. Table created before querying.");
+            }
+        }
     }
 
-    println!("All enemies defeated!");
-}
-
-fn main() {
-    Battle_Engine();
-    New_Battle_Engine();
+    Ok(())
 }
