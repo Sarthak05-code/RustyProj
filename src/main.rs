@@ -1,33 +1,34 @@
-use std::{fs::OpenOptions, io::Read};
+use gpui::*;
 
-fn main() -> std::io::Result<()> {
-    let mut sql_file = OpenOptions::new().read(true).open("sql.txt")?;
-    let mut readable_content = String::new();
-    sql_file.read_to_string(&mut readable_content)?;
+struct HelloWorld;
 
-    // Convert everything to lowercase to make the check case-insensitive
-    let content_lower = readable_content.to_lowercase();
-
-    // 1. Find the position (index) of the keywords
-    let create_pos = content_lower.find("create table");
-    let select_pos = content_lower.find("select");
-
-    // 2. Run the validation logic
-    match (create_pos, select_pos) {
-        (None, _) => {
-            println!("Failure: No 'CREATE TABLE' statement found in the script.");
-        }
-        (Some(_), None) => {
-            println!("Success: Table created (no queries executed yet).");
-        }
-        (Some(create_idx), Some(select_idx)) => {
-            if create_idx > select_idx {
-                println!("Failure: You are trying to SELECT before creating the table!");
-            } else {
-                println!("Success: SQL order is valid. Table created before querying.");
-            }
-        }
+impl Render for HelloWorld {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .flex()
+            .items_center()
+            .justify_center()
+            .bg(rgb(0x1e1e2e))
+            .size_full()
+            .text_color(rgb(0xcdd6f4))
+            .text_xl()
+            .font_weight(FontWeight::BOLD)
+            .child("Hello World from GPUI & Rust!")
     }
+}
 
-    Ok(())
+fn main() {
+    gpui_platform::application().run(|cx: &mut App| {
+        let bounds = Bounds::centered(None, size(px(600.0), px(400.0)), cx);
+
+        let options = WindowOptions {
+            window_bounds: Some(WindowBounds::Windowed(bounds)),
+            ..Default::default()
+        };
+
+        cx.open_window(options, |_window, cx| cx.new(|_| HelloWorld))
+            .unwrap();
+
+        cx.activate(true);
+    });
 }
