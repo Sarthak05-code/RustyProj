@@ -1,34 +1,45 @@
-use gpui::*;
+#![allow(unused)]
+use std::{
+    io::{BufRead, BufReader, Write},
+    net::{TcpListener, TcpStream},
+    thread,
+};
 
-struct HelloWorld;
+fn handle_client(mut stream: TcpStream) {
+    let buffer_reader = BufReader::new(&stream);
 
-impl Render for HelloWorld {
-    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .items_center()
-            .justify_center()
-            .bg(rgb(0x1e1e2e))
-            .size_full()
-            .text_color(rgb(0xcdd6f4))
-            .text_xl()
-            .font_weight(FontWeight::BOLD)
-            .child("Hello World from GPUI & Rust!")
+    if let Some(Ok(request_line)) = buffer_reader.lines().next() {
+        println!("Received HTTP Request: {request_line}");
+    }
+    let status_code = "HTTP/1.1 200 OK";
+    let content = "<h1> Hello from your RUST TCP Server!. </h1>";
+    let length = content.len();
+
+    let response = format!(
+        "{}\r\nContent-length: {}\r\n\r\n{}",
+        status_code, length, content
+    );
+
+    if let Err(e) = stream.write_all(response.as_bytes()) {
+        eprintln!("Failed to send response : {e}");
     }
 }
 
-fn main() {
-    gpui_platform::application().run(|cx: &mut App| {
-        let bounds = Bounds::centered(None, size(px(600.0), px(400.0)), cx);
+fn main() -> std::io::Result<()> {
+    let socket = TcpListener::bind("127.0.0.1:8080")?;
+    println!("Server is listening: 8080...");
+    for stream in socket.incoming() {
+        match stream {
+            Ok(stream) => {
+                thread::spawn(move || {
+                    handle_client(stream);
+                });
+            }
+            Err(e) => {
+                eprintln!("Error : {e}")
+            }
+        }
+    }
 
-        let options = WindowOptions {
-            window_bounds: Some(WindowBounds::Windowed(bounds)),
-            ..Default::default()
-        };
-
-        cx.open_window(options, |_window, cx| cx.new(|_| HelloWorld))
-            .unwrap();
-
-        cx.activate(true);
-    });
+    Ok(())
 }
